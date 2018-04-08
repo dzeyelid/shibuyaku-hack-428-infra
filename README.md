@@ -15,6 +15,7 @@ Azure CLI 2.0 でデプロイする
 そして、 `parameters.json` の下記の値を入力してから、デプロイしてください。
 
 | キー名 | 説明 |
+| --- | --- |
 | `databaseForMySqlAdminName` | データベースの管理ユーザー |
 | `databaseForMySqlAdminPassword` | データベースの管理ユーザーのパスワード |
 
