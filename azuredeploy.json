@@ -1,0 +1,199 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters":{
+        "hostingPlanSkuName": {
+            "type": "string",
+            "defaultValue": "B1",
+            "allowedValues": [
+                "FREE",
+                "SHARED",
+                "D1",
+                "B1",
+                "B2",
+                "B3",
+                "S1",
+                "S2",
+                "S3",
+                "F1",
+                "P1",
+                "P1V2",
+                "P2",
+                "P2V2",
+                "P3",
+                "P3V2"
+            ]
+        },
+        "databaseForMySqlAdminName": {
+            "type": "string"
+        },
+        "databaseForMySqlAdminPassword": {
+            "type": "securestring"
+        },
+        "databaseForMySqlDatabaseName": {
+            "type": "string"
+        },
+        "databaseForMySqlTier": {
+            "type": "string",
+            "defaultValue": "Basic",
+            "allowedValues": [
+                "Basic",
+                "GeneralPurpose",
+                "MemoryOptimized"
+            ]
+        },
+        "databaseForMySqlFamily": {
+            "type": "string",
+            "defaultValue": "Gen4",
+            "allowedValues": [
+                "Gen4",
+                "Gen5"
+            ]
+        },
+        "databaseForMySqlCores": {
+            "type": "int",
+            "defaultValue": 1,
+            "allowedValues": [
+                1,
+                2,
+                4,
+                8,
+                16,
+                32
+            ]
+        },
+        "databaseForMySqlVersion": {
+            "type": "string",
+            "defaultValue": "5.7",
+            "allowedValues": [
+                "5.7",
+                "5.6"
+            ]
+        },
+        "phpVersion": {
+            "type": "string",
+            "defaultValue": "7.1",
+            "allowedValues": [
+                "5.6",
+                "7.0",
+                "7.1",
+                "7.2"
+            ]
+        },
+        "ciRepositoryUrl": {
+            "type": "string",
+            "defaultValue": "git@github.com:dzeyelid/428.git"
+        },
+        "ciRepositoryBranch": {
+            "type": "string",
+            "defaultValue": "dev"
+        }
+    },
+    "variables": {
+        "location": "[resourceGroup().location]",
+        "webAppName": "[concat(resourceGroup().name, 'web')]",
+        "hostingPlanName": "[concat(resourceGroup().name, 'appplan')]",
+        "databaseForMySqlName": "[concat(resourceGroup().name, 'mysql')]",
+        "databaseForMySqlSku": "[concat(variables('tierSymbol')[parameters('databaseForMySqlTier')], '_', parameters('databaseForMySqlFamily'), '_', parameters('databaseForMySqlCores'))]",
+        "tierSymbol": {
+            "Basic": "B",
+            "GeneralPurpose": "GP",
+            "MemoryOptimized": "MO"
+        }
+    },
+    "resources": [
+        {
+            "name": "[variables('hostingPlanName')]",
+            "type": "Microsoft.Web/serverfarms",
+            "apiVersion": "2016-09-01",
+            "location": "[variables('location')]",
+            "kind": "app",
+            "sku": {
+                "name": "[parameters('hostingPlanSkuName')]"
+            }
+        },
+        {
+            "name": "[variables('webAppName')]",
+            "type": "Microsoft.Web/sites",
+            "apiVersion": "2016-08-01",
+            "location": "[variables('location')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Web/serverfarms', variables('hostingPlanName'))]"
+            ],
+            "kind": "app",
+            "properties": {
+                "serverFarmId": "[resourceId('Microsoft.Web/serverfarms', variables('hostingPlanName'))]",
+                "siteConfig": {
+                    "phpVersion": "[parameters('phpVersion')]",
+                    "connectionStrings": [
+                        {
+                            "name": "host",
+                            "ConnectionString": "[concat(variables('databaseForMySqlName'), '.mysql.database.azure.com')]",
+                            "type": "MySql"
+                        },
+                        {
+                            "name": "username",
+                            "ConnectionString": "[concat(parameters('databaseForMySqlAdminName'), '@', variables('databaseForMySqlName'))]",
+                            "type": "MySql"
+                        },
+                        {
+                            "name": "password",
+                            "ConnectionString": "[parameters('databaseForMySqlAdminPassword')]",
+                            "type": "MySql"
+                        },
+                        {
+                            "name": "database",
+                            "ConnectionString": "[parameters('databaseForMySqlDatabaseName')]",
+                            "type": "MySql"
+                        }
+                    ]
+                }
+            },
+            "resources": [
+                {
+                    "apiVersion": "2015-08-01",
+                    "name": "web",
+                    "type": "sourcecontrols",
+                    "dependsOn": [
+                        "[resourceId('Microsoft.Web/sites', variables('webAppName'))]"
+                    ],
+                    "properties": {
+                        "RepoUrl": "[parameters('ciRepositoryUrl')]",
+                        "branch": "[parameters('ciRepositoryBranch')]",
+                        "IsManualIntegration": false
+                    }
+                }
+            ]
+        },
+        {
+            "name": "[variables('databaseForMySqlName')]",
+            "type": "Microsoft.DBforMySQL/servers",
+            "apiVersion": "2017-12-01",
+            "location": "[variables('location')]",
+            "sku": {
+                "name": "[variables('databaseForMySqlSku')]"
+            },
+            "properties": {
+                "version": "[parameters('databaseForMySqlVersion')]",
+                "administratorLogin": "[parameters('databaseForMySqlAdminName')]",
+                "administratorLoginPassword": "[parameters('databaseForMySqlAdminPassword')]",
+                "sslEnforcement": "Disabled",
+                "createMode": "default"
+            },
+            "resources": [
+                {
+                    "name": "[parameters('databaseForMySqlDatabaseName')]",
+                    "type": "databases",
+                    "apiVersion": "2017-12-01",
+                    "dependsOn": [
+                        "[resourceId('Microsoft.DBforMySQL/servers', variables('databaseForMySqlName'))]"
+                    ],
+                    "properties": {
+                        "charset": "utf8",
+                        "collation": "utf8_general_ci"
+                    }
+                }
+            ]
+        }
+    ]
+}

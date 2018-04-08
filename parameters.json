@@ -1,0 +1,39 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentParameters.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters":{
+        "hostingPlanSkuName": {
+            "value": "B1"
+        },
+        "databaseForMySqlAdminName": {
+            "value": ""
+        },
+        "databaseForMySqlAdminPassword": {
+            "value": ""
+        },
+        "databaseForMySqlDatabaseName": {
+            "value": "shibuya"
+        },
+        "databaseForMySqlTier": {
+            "value": "Basic"
+        },
+        "databaseForMySqlFamily": {
+            "value": "Gen4"
+        },
+        "databaseForMySqlCores": {
+            "value": 1
+        },
+        "databaseForMySqlVersion": {
+            "value": "5.7"
+        },
+        "phpVersion": {
+            "value": "7.1"
+        },
+        "ciRepositoryUrl": {
+            "value": "git@github.com:dzeyelid/428.git"
+        },
+        "ciRepositoryBranch": {
+            "value": "dev"
+        }
+    }
+}
